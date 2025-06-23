@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  # ==========================
+  # Servicio para DESARROLLO
+  # ==========================
+  dev:
+    image: mi-app-simple # Usa la imagen de desarrollo pre-construida
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - .env # ¡Carga las variables desde el archivo .env!
+    profiles:
+      - development # Perfil para desarrollo
+
+  # ==========================
+  # Servicio para PRODUCCIÓN
+  # ==========================
+  prod:
+    image: mi-app-prod # Usa la imagen de producción pre-construida
+    ports:
+      - "8080:80" # Mapeamos el puerto 80 del contenedor al 8080 de tu PC
+    profiles:
+      - production # Perfil para producción
