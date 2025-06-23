@@ -1,6 +1,6 @@
 # Guía Completa: Supabase Local con Docker
 
-Esta guía te lleva paso a paso para levantar y usar Supabase en tu máquina local, integrarlo con tu frontend y alternar fácilmente entre entorno local y nube. Ideal para desarrollo profesional y aprendizaje profundo.
+Esta guía te lleva paso a paso para levantar y usar Supabase en tu máquina local, integrarlo con tu frontend y alternar fácilmente entre entorno local y nube. Ideal para desarrollo profesional y aprendizaje profunda.
 
 ---
 
@@ -74,7 +74,45 @@ npx supabase db push --local
 
 ---
 
-## 6. Variables de entorno para alternar entre local y nube
+## 6. Seguridad: RLS y Políticas como migraciones
+
+**¡Clave para entornos profesionales!**
+
+- Las políticas de seguridad (RLS) que configuras en la nube NO se aplican automáticamente en local.
+- Para que tu entorno local y la nube sean idénticos y seguros, debes agregar las políticas como migraciones SQL.
+
+### Ejemplo de migración para RLS y políticas de usuario
+
+Crea un archivo `.sql` en `supabase/migrations/` (por ejemplo, `20250701_enable_rls_and_policies.sql`):
+
+```sql
+-- Activa RLS en la tabla notes
+ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+
+-- Permite que cada usuario solo vea sus propias notas
+CREATE POLICY "Solo ver mis notas"
+  ON notes
+  FOR SELECT
+  USING (user_id = auth.uid());
+
+-- Permite que cada usuario solo inserte/actualice/borré sus propias notas
+CREATE POLICY "Solo modificar mis notas"
+  ON notes
+  FOR ALL
+  USING (user_id = auth.uid());
+```
+
+Luego aplica la migración:
+
+```bash
+npx supabase db push --local
+```
+
+**¡Así te aseguras de que la seguridad es igual en todos los entornos!**
+
+---
+
+## 7. Variables de entorno para alternar entre local y nube
 
 Crea dos archivos en la raíz del proyecto:
 
@@ -107,14 +145,40 @@ set ENV_FILE=.env.cloud && docker-compose --profile development up --build
 
 ---
 
-## 7. Integración con tu frontend (React, etc.)
+## 8. Automatización con scripts en package.json
+
+Agrega estos scripts para automatizar el flujo:
+
+```json
+"scripts": {
+  "dev:local": "docker-compose --profile development up --build",
+  "dev:cloud": "set ENV_FILE=.env.cloud && docker-compose --profile development up --build",
+  "stop": "docker-compose down"
+}
+```
+
+### ¿Qué hace cada script?
+
+- **dev:local**: Levanta la app usando Supabase local (por defecto).
+- **dev:cloud**: Cambia a entorno nube y levanta la app.
+- **stop**: Detiene y elimina los contenedores de Docker Compose.
+
+**¿Cómo los usas?**
+
+- Para local: `yarn dev:local`
+- Para nube: `yarn dev:cloud`
+- Para detener: `yarn stop`
+
+---
+
+## 9. Integración con tu frontend (React, etc.)
 
 - El frontend debe leer las variables de entorno (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`).
 - Usa `host.docker.internal` en vez de `localhost` para que el contenedor de la app pueda comunicarse con Supabase local.
 
 ---
 
-## 8. Panel de control local (Studio)
+## 10. Panel de control local (Studio)
 
 Abre en tu navegador:
 
@@ -126,7 +190,7 @@ Aquí puedes ver y editar tablas, usuarios, políticas RLS, etc., igual que en l
 
 ---
 
-## 9. Problemas comunes y soluciones
+## 11. Problemas comunes y soluciones
 
 - **No se encuentra el comando `supabase`:**
   - Cierra y abre una nueva terminal tras instalar la CLI.
@@ -142,28 +206,22 @@ Aquí puedes ver y editar tablas, usuarios, políticas RLS, etc., igual que en l
   - Usa siempre el flag `--local` para asegurarte de que actúas sobre la base local.
 - **El frontend no conecta a Supabase local:**
   - Usa `host.docker.internal` en vez de `localhost` en las variables de entorno.
+- **RLS/políticas no aplicadas:**
+  - Asegúrate de tener las políticas como migraciones SQL y de aplicar las migraciones tras reiniciar la base de datos.
 
 ---
 
-## 10. Tips avanzados
+## 12. Buenas prácticas y checklist final
 
-- Puedes alternar entre entornos con scripts en `package.json`:
-
-```json
-"scripts": {
-  "dev:local": "docker-compose --profile development up --build",
-  "dev:cloud": "set ENV_FILE=.env.cloud && docker-compose --profile development up --build"
-}
-```
-
-- Para reiniciar todo desde cero:
-  1. `supabase stop --no-backup`
-  2. `supabase start`
-  3. `npx supabase db push --local`
+- **Siempre versiona tus migraciones y políticas.**
+- **Automatiza el flujo con scripts.**
+- **Verifica la seguridad en local antes de desplegar.**
+- **Usa Studio local para depurar y probar.**
+- **Alterna entre entornos solo con scripts, nunca editando archivos a mano.**
 
 ---
 
-## 11. Recursos útiles
+## 13. Recursos útiles
 
 - [Documentación oficial Supabase CLI](https://supabase.com/docs/guides/cli)
 - [Solución de problemas en Windows](https://supabase.com/docs/guides/local-development/cli/getting-started?platform=windows)
@@ -171,4 +229,4 @@ Aquí puedes ver y editar tablas, usuarios, políticas RLS, etc., igual que en l
 
 ---
 
-¡Listo! Ahora tienes un entorno Supabase local profesional, rápido y seguro para desarrollar como un pro. 🚀
+¡Listo! Ahora tienes un entorno Supabase local profesional, seguro, automatizado y reproducible. 🚀

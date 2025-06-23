@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:local": "docker-compose --profile development up --build",
+    "dev:cloud": "set ENV_FILE=.env.cloud && docker-compose --profile development up --build",
+    "stop": "docker-compose down"
   },
   "dependencies": {
     "@supabase/auth-ui-react": "^0.4.7",
