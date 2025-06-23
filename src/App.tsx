@@ -1,35 +1,83 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import { useState, useEffect } from "react";
 import "./App.css";
+import { supabase } from "./lib/supabaseClient"; // Importamos nuestro cliente
+
+// Definimos el tipo para una Nota para que TypeScript nos ayude
+type Note = {
+  id: number;
+  created_at: string;
+  title: string | null;
+};
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [newNoteTitle, setNewNoteTitle] = useState("");
+
+  useEffect(() => {
+    // Función para obtener las notas
+    const fetchNotes = async () => {
+      const { data, error } = await supabase
+        .from("notes")
+        .select("*")
+        .order("created_at", { ascending: false }); // Ordenamos las más nuevas primero
+
+      if (error) {
+        console.error("Error fetching notes:", error);
+      } else if (data) {
+        setNotes(data);
+      }
+    };
+
+    fetchNotes();
+  }, []); // El array vacío hace que se ejecute solo una vez al montar el componente
+
+  const handleAddNote = async () => {
+    if (newNoteTitle.trim() === "") return; // Evitamos notas vacías
+
+    const { error } = await supabase
+      .from("notes")
+      .insert({ title: newNoteTitle });
+
+    if (error) {
+      console.error("Error adding note:", error);
+    } else {
+      // Refrescamos la lista de notas para ver la nueva
+      const { data } = await supabase
+        .from("notes")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (data) setNotes(data);
+      setNewNoteTitle(""); // Limpiamos el input
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>{import.meta.env.VITE_APP_TITLE || "Título por Defecto"}</h1>
-      <p>{import.meta.env.VITE_WELCOME_MESSAGE}</p>
+    <div className="App">
+      <h1>Notas de Supabase</h1>
+
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+        <input
+          type="text"
+          placeholder="Escribe una nueva nota..."
+          value={newNoteTitle}
+          onChange={(e) => setNewNoteTitle(e.target.value)}
+        />
+        <button onClick={handleAddNote}>Añadir Nota</button>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+
+      <div className="notes-list">
+        <h2>Notas Existentes:</h2>
+        {notes.length > 0 ? (
+          <ul>
+            {notes.map((note) => (
+              <li key={note.id}>{note.title}</li>
+            ))}
+          </ul>
+        ) : (
+          <p>No hay notas. ¡Añade una!</p>
+        )}
+      </div>
+    </div>
   );
 }
 

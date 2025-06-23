@@ -9,8 +9,14 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      - .:/app
-      - /app/node_modules
+      # Montamos explícitamente solo lo que necesitamos para el hot-reload.
+      # Esto evita conflictos con la carpeta node_modules del contenedor.
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./index.html:/app/index.html
+      - ./vite.config.ts:/app/vite.config.ts
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.app.json:/app/tsconfig.app.json
     env_file:
       - .env # ¡Carga las variables desde el archivo .env!
     profiles:
