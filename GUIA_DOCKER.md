@@ -102,6 +102,10 @@ Hicimos nuestro sistema configurable sin exponer información sensible.
 3.  **Archivo `env.example`:** Creamos una plantilla para que otros desarrolladores sepan qué variables configurar.
 4.  **`env_file` en `docker-compose.yml`:** Le indicamos a Docker Compose que inyecte las variables del archivo `.env` en el contenedor en el momento del arranque.
 
+### Fase 5: Limpieza Definitiva
+
+5.  `docker-compose up`: Levanta el entorno con una configuración limpia y precisa.
+
 ---
 
 ## 4. Flujo de Trabajo para Equipos (La Guía para "Juan")
@@ -175,3 +179,20 @@ volumes:
   3.  `yarn install` (en el host): Reinstala las dependencias de forma limpia en el host.
   4.  `docker build ...`: Reconstruye la imagen con las dependencias correctas.
   5.  `docker-compose up`: Levanta el entorno con una configuración limpia y precisa.
+
+---
+
+## 7. Orquestación de Múltiples Servicios (Frontend + Backend)
+
+A medida que nuestro proyecto crece, no solo tenemos un servicio (el frontend), sino un ecosistema completo (frontend, base de datos, autenticación, etc.). Aquí es donde Docker Compose demuestra su verdadero poder como **orquestador**.
+
+- **El Concepto (Microservicios):** En lugar de construir una sola imagen gigante con todo dentro (una mala práctica llamada monolito), creamos imágenes separadas para cada responsabilidad:
+
+  - **Imagen del Cliente (React):** Responsable solo de la UI.
+  - **Imagen de la Base de Datos (PostgreSQL):** Responsable solo del almacenamiento.
+  - **Imagen de Autenticación (Supabase GoTrue):** Responsable solo de los usuarios.
+  - ... y así sucesivamente.
+
+- **El Rol de Docker Compose:** Actúa como el **director de orquesta**. El archivo `docker-compose.yml` define todos estos servicios independientes y cómo se comunican entre sí. Cuando ejecutas `docker-compose up`, levanta todo este ecosistema de contenedores, creando una réplica local y funcional de tu entorno de producción.
+
+- **La Ventaja:** Esta arquitectura de "separación de responsabilidades" permite que los servicios se actualicen, escalen y mantengan de forma independiente, lo cual es la base de las aplicaciones modernas y robustas.

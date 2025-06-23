@@ -97,3 +97,28 @@ Hicimos que nuestra aplicación React pudiera leer y escribir en la base de dato
     - **Escribir datos:** `const { error } = await supabase.from('notes').insert({ title: 'Nueva nota' })`
 
 ¡Y con esto, logramos una aplicación full-stack básica y bien arquitecturada!
+
+---
+
+## 5. Flujo de Desarrollo "Local-First" con Docker
+
+Una vez que entendemos los conceptos básicos, el siguiente paso es adoptar un flujo de trabajo profesional que no dependa de la nube para el desarrollo diario.
+
+- **El Concepto "Local-First":** En lugar de que nuestra aplicación de desarrollo apunte a la base de datos remota de Supabase, recreamos todo el stack de Supabase (Base de Datos, Autenticación, etc.) en nuestra máquina local usando **contenedores de Docker**.
+
+- **¿Cómo funciona?**
+
+  1.  La **Supabase CLI** tiene la capacidad de usar Docker para levantar una versión local de la plataforma.
+  2.  Nuestro `docker-compose.yml` se actualiza para incluir no solo nuestro servicio de frontend, sino también todos los servicios que componen Supabase (PostgreSQL, GoTrue, Kong, etc.).
+  3.  El desarrollador trabaja en un entorno **100% local, offline y aislado**.
+
+- **Ventajas:**
+
+  - **Velocidad:** Los cambios y pruebas son instantáneos.
+  - **Aislamiento:** No hay miedo de "romper" la base de datos compartida en la nube.
+  - **Desarrollo Offline:** No se necesita conexión a internet.
+  - **Costo Cero:** No se utilizan los recursos del plan en la nube durante el desarrollo.
+
+- **El Flujo:**
+  1.  Se desarrollan nuevas características y se crean migraciones contra la base de datos local de Docker.
+  2.  Una vez que la característica está completa y probada localmente, se "empujan" las nuevas migraciones a la base de datos remota con `npx supabase db push`.
