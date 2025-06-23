@@ -1,21 +1,25 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 import { supabase } from "./lib/supabaseClient"; // Importamos nuestro cliente
+import type { Session } from "@supabase/supabase-js";
 
 // Definimos el tipo para una Nota para que TypeScript nos ayude
 type Note = {
   id: number;
   created_at: string;
   title: string | null;
+  user_id: string | null;
 };
 
-function App() {
+// El componente ahora espera recibir la sesión como prop
+export default function App({ session }: { session: Session }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [newNoteTitle, setNewNoteTitle] = useState("");
 
   useEffect(() => {
     // Función para obtener las notas
     const fetchNotes = async () => {
+      // Ahora la política RLS filtrará automáticamente las notas por el usuario autenticado
       const { data, error } = await supabase
         .from("notes")
         .select("*")
@@ -29,14 +33,15 @@ function App() {
     };
 
     fetchNotes();
-  }, []); // El array vacío hace que se ejecute solo una vez al montar el componente
+  }, [session]); // Volvemos a cargar las notas si la sesión cambia
 
   const handleAddNote = async () => {
     if (newNoteTitle.trim() === "") return; // Evitamos notas vacías
 
     const { error } = await supabase
       .from("notes")
-      .insert({ title: newNoteTitle });
+      // Ahora incluimos el user_id al insertar
+      .insert({ title: newNoteTitle, user_id: session.user.id });
 
     if (error) {
       console.error("Error adding note:", error);
@@ -51,9 +56,27 @@ function App() {
     }
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
     <div className="App">
-      <h1>Notas de Supabase</h1>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <h1>Mis Notas Seguras</h1>
+        <div>
+          <span>{session.user.email}</span>
+          <button onClick={handleLogout} style={{ marginLeft: "1rem" }}>
+            Cerrar Sesión
+          </button>
+        </div>
+      </header>
 
       <div className="card">
         <input
@@ -80,5 +103,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
