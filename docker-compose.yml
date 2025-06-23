@@ -18,7 +18,7 @@ services:
       - ./tsconfig.json:/app/tsconfig.json
       - ./tsconfig.app.json:/app/tsconfig.app.json
     env_file:
-      - .env # ¡Carga las variables desde el archivo .env!
+      - ${ENV_FILE:-.env.local}
     profiles:
       - development # Perfil para desarrollo
 
