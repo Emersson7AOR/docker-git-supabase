@@ -145,3 +145,33 @@ Este es el proceso para que un nuevo desarrollador se una al proyecto.
 - `docker-compose --profile <perfil> up`: Inicia solo los servicios de un perfil.
 - `docker-compose down`: Detiene y elimina los contenedores, redes y volúmenes creados por `up`.
 - `docker-compose exec <servicio> <comando>`: Ejecuta un comando dentro de un contenedor que ya está corriendo.
+
+---
+
+## 6. Resolución de Problemas Avanzados: El Conflicto de `node_modules`
+
+Durante nuestro desarrollo, nos encontramos con un error persistente: `Failed to resolve import`. Este es un problema muy común y la solución revela un concepto clave sobre los volúmenes de Docker.
+
+- **El Problema:** La directiva `volumes: - .:/app` en `docker-compose.yml` es muy conveniente, pero puede causar conflictos. Monta **toda** tu carpeta de proyecto local encima de la carpeta `/app` del contenedor. Al hacer esto, la carpeta `node_modules` de tu sistema anfitrión (Windows) "aplasta" a la carpeta `node_modules` interna y optimizada del contenedor, que fue creada durante el `docker build`. Inconsistencias entre el sistema de archivos del anfitrión y el del contenedor pueden causar que los módulos no se resuelvan correctamente.
+
+- **La Solución Robusta:** En lugar de montar toda la carpeta, montamos **explícitamente solo los archivos y carpetas que necesitamos para el hot-reload**. De esta manera, forzamos al contenedor a usar **siempre su propia carpeta `node_modules` interna**, que está garantizado que es correcta.
+
+**Configuración de volúmenes modificada en `docker-compose.yml`:**
+
+```yaml
+volumes:
+  # Montamos explícitamente solo lo que necesitamos para el hot-reload.
+  # Esto evita conflictos con la carpeta node_modules del contenedor.
+  - ./src:/app/src
+  - ./public:/app/public
+  - ./index.html:/app/index.html
+  - ./vite.config.ts:/app/vite.config.ts
+  # ... y otros archivos de configuración necesarios.
+```
+
+- **El Proceso de Limpieza Definitivo (cuando las cosas van muy mal):**
+  1.  `docker-compose down -v`: Detiene todo y **elimina los volúmenes anónimos** (la "mochila fantasma").
+  2.  `rm -r -force node_modules` (en el host): Elimina las dependencias locales.
+  3.  `yarn install` (en el host): Reinstala las dependencias de forma limpia en el host.
+  4.  `docker build ...`: Reconstruye la imagen con las dependencias correctas.
+  5.  `docker-compose up`: Levanta el entorno con una configuración limpia y precisa.
